@@ -58,6 +58,22 @@ class User extends ActiveRecord implements IdentityInterface
     const NEW_PW = 'new-pw';
     const SETTINGS = 'settings';
 
+    /**
+     * Scenarios a user reaches for their own account. DefaultController mass-assigns
+     * straight from POST in all of them, and signup and recover are reachable without
+     * being logged in at all.
+     */
+    const SELF_SERVICE_SCENARIOS = [self::SETTINGS, self::NEW_PW, 'delete'];
+
+    /**
+     * Attributes a user may change about their own account. Everything else stays
+     * validated but unsafe in the scenarios above. A subclass may extend this list,
+     * but must never add an attribute that decides what the user may see or do.
+     */
+    const SELF_EDITABLE_ATTRIBUTES = [
+        'name', 'email', 'password', 'password_repeat', 'terms', 'captcha', 'reCaptcha',
+    ];
+
     public $password;
     public $terms;
     public $flags = [];
@@ -126,6 +142,32 @@ class User extends ActiveRecord implements IdentityInterface
             [['singleRole', 'roles'], 'safe']
         ], $this->captchaRules(), $this->passwordRules());
         return $r;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Most rules in rules() carry neither 'on' nor 'except', so Yii makes their
+     * attributes safe in every scenario -- including the ones a user drives themselves.
+     * status, roles, singleRole and credits would then be settable with a hand-crafted
+     * POST. Marking them '!' keeps them validated but no longer mass-assignable.
+     */
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+
+        foreach (static::SELF_SERVICE_SCENARIOS as $scenario)    {
+            if (! isset($scenarios[$scenario])) continue;
+
+            foreach ($scenarios[$scenario] as $i => $attribute)  {
+                $name = ltrim($attribute, '!');
+                if (! in_array($name, static::SELF_EDITABLE_ATTRIBUTES, true))  {
+                    $scenarios[$scenario][$i] = '!' . $name;
+                }
+            }
+        }
+
+        return $scenarios;
     }
 
     /**
