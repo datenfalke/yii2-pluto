@@ -185,7 +185,7 @@ class DefaultController extends Controller
             } else {
                 Yii::$app->session->setFlash('error',
                     Yii::t('pluto', 'Sorry, we are unable to reset the  password related to this email address.'));
-                    Yii::error(Yii::$app->user->identity->email . ' resent verification email failed.', 'musikario');
+                    Yii::error($model->email . ' forgot password, but no account has this address.', 'musikario');
             }
         }
 
@@ -252,12 +252,12 @@ class DefaultController extends Controller
                 ]), 'confirm'))  {
                 Yii::$app->session->setFlash('success',
                     Yii::t('pluto', 'Please check your inbox for a verification email.'));
-                Yii::info(Yii::$app->user->identity->email . ' resent verification email.', 'musikario');
+                Yii::info($model->email . ' resent verification email.', 'musikario');
                 return $this->goHome();
             }
             Yii::$app->session->setFlash('error',
                 Yii::t('pluto', 'Sorry, we were unable to resend a verification email to this email address.'));
-                Yii::error(Yii::$app->user->identity->email . ' unable to resend a verification email to this email address.', 'musikario');
+                Yii::error($model->email . ' unable to resend a verification email to this email address.', 'musikario');
         }
 
         return $this->render('resend', [
